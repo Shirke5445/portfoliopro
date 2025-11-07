@@ -11,19 +11,24 @@ import Footer from '../Home/Footer/Footer';
 import './ContactMe.css';
 
 export default function ContactMe(props) {
+  // -----------------------------
   // Animation handler
-  let fadeInScreenHandler = (screen) => {
+  // -----------------------------
+  const fadeInScreenHandler = (screen) => {
     if (screen.fadeInScreen !== props.id) return;
     Animations.animations.fadeInScreen(props.id);
   };
   ScrollService.currentScreenFadeIn.subscribe(fadeInScreenHandler);
 
-  // Configuration
-  const API_ENDPOINT =
-    process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+  // -----------------------------
+  // API endpoint config
+  // -----------------------------
+  const API_ENDPOINT = process.env.REACT_APP_API_URL || 'http://localhost:5000'; // Use Render backend URL in production
   const TIMEOUT_DURATION = 15000; // 15 seconds
 
-  // State management
+  // -----------------------------
+  // Form state
+  // -----------------------------
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,10 +39,7 @@ export default function ContactMe(props) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validateForm = () => {
@@ -60,6 +62,9 @@ export default function ContactMe(props) {
     return true;
   };
 
+  // -----------------------------
+  // Form submission
+  // -----------------------------
   const submitForm = async (e) => {
     e.preventDefault();
     setLastError(null);
@@ -67,21 +72,15 @@ export default function ContactMe(props) {
     if (!validateForm()) return;
 
     setLoading(true);
-    console.debug('Submitting form data:', formData);
-
     try {
       const response = await axios.post(
         `${API_ENDPOINT}/api/contact`,
         formData,
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           timeout: TIMEOUT_DURATION,
         }
       );
-
-      console.debug('Server response:', response.data);
 
       if (response.data.success) {
         toast.success(response.data.message || 'Message sent successfully!');
@@ -90,17 +89,13 @@ export default function ContactMe(props) {
         throw new Error(response.data.message || 'Unexpected server response');
       }
     } catch (error) {
-      console.error('Submission error:', {
-        error: error.response?.data || error.message,
-        config: error.config,
-      });
-
+      console.error('Submission error:', error.response || error.message);
       setLastError(error);
 
       let userMessage = 'Failed to send message';
       if (error.response) {
         if (error.response.status === 401) {
-          userMessage = 'Server email configuration issue - contact admin';
+          userMessage = 'Server email configuration issue';
         } else if (error.response.data?.message) {
           userMessage = error.response.data.message;
         } else {
@@ -118,10 +113,15 @@ export default function ContactMe(props) {
     }
   };
 
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
     <div className="main-container fade-in" id={props.id || ''}>
-      <ScreenHeading subHeading={'Lets Keep In Touch'} title={'Contact Me'} />
+      <ScreenHeading subHeading="Lets Keep In Touch" title="Contact Me" />
+
       <div className="central-form">
+        {/* Left column */}
         <div className="col">
           <h2 className="title">
             <Typewriter
@@ -172,11 +172,14 @@ export default function ContactMe(props) {
             </a>
           </div>
         </div>
+
+        {/* Right column (form) */}
         <div className="back-form">
           <div className="img-back">
             <h4>Send Your Email Here!</h4>
             <img src={imgBack} alt="Email background" loading="lazy" />
           </div>
+
           <form onSubmit={submitForm}>
             {lastError && (
               <div className="error-notice">
@@ -193,7 +196,6 @@ export default function ContactMe(props) {
               onChange={handleInputChange}
               placeholder="Your Name"
               required
-              aria-required="true"
               disabled={loading}
             />
 
@@ -206,7 +208,6 @@ export default function ContactMe(props) {
               onChange={handleInputChange}
               placeholder="Your Email"
               required
-              aria-required="true"
               disabled={loading}
             />
 
@@ -218,9 +219,8 @@ export default function ContactMe(props) {
               onChange={handleInputChange}
               placeholder="Your Message"
               rows="5"
-              required
-              aria-required="true"
               maxLength="2000"
+              required
               disabled={loading}
             />
 
@@ -245,6 +245,7 @@ export default function ContactMe(props) {
           </form>
         </div>
       </div>
+
       <Footer />
     </div>
   );
