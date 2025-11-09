@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Typewriter } from 'react-simple-typewriter';
-import axios from 'axios';
 import { toast } from 'react-toastify';
+import emailjs from '@emailjs/browser';
 import imgBack from '../../../src/images/mailz.jpeg';
 import load1 from '../../../src/images/load2.gif';
 import ScreenHeading from '../../utilities/ScreenHeading/ScreenHeading';
@@ -21,10 +21,11 @@ export default function ContactMe(props) {
   ScrollService.currentScreenFadeIn.subscribe(fadeInScreenHandler);
 
   // -----------------------------
-  // API endpoint config
+  // EmailJS Configuration - GIRISH'S ACTUAL KEYS
   // -----------------------------
-  const API_ENDPOINT = process.env.REACT_APP_API_URL || 'http://localhost:5000'; // Use Render backend URL in production
-  const TIMEOUT_DURATION = 15000; // 15 seconds
+  const EMAILJS_SERVICE_ID = 'service_wwigwn4';
+  const EMAILJS_TEMPLATE_ID = 'template_3w86hpf'; // Your actual Template ID
+  const EMAILJS_PUBLIC_KEY = 'b-i8aVO28FXz8EJl2';
 
   // -----------------------------
   // Form state
@@ -63,7 +64,7 @@ export default function ContactMe(props) {
   };
 
   // -----------------------------
-  // Form submission
+  // Form submission with EmailJS
   // -----------------------------
   const submitForm = async (e) => {
     e.preventDefault();
@@ -73,38 +74,36 @@ export default function ContactMe(props) {
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        `${API_ENDPOINT}/api/contact`,
-        formData,
+      // Send email directly using EmailJS
+      const result = await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
         {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: TIMEOUT_DURATION,
-        }
+          from_name: formData.name,
+          from_email: formData.email,
+          message: formData.message,
+          to_email: 'girishshirke54s@gmail.com',
+          to_name: 'Girish Shirke',
+          date: new Date().toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            dateStyle: 'full',
+            timeStyle: 'medium',
+          }),
+        },
+        EMAILJS_PUBLIC_KEY
       );
 
-      if (response.data.success) {
-        toast.success(response.data.message || 'Message sent successfully!');
-        setFormData({ name: '', email: '', message: '' });
-      } else {
-        throw new Error(response.data.message || 'Unexpected server response');
-      }
+      console.log('Email sent successfully:', result);
+
+      toast.success('Message sent successfully! I will reply within 24 hours.');
+      setFormData({ name: '', email: '', message: '' });
     } catch (error) {
-      console.error('Submission error:', error.response || error.message);
+      console.error('Submission error:', error);
       setLastError(error);
 
       let userMessage = 'Failed to send message';
-      if (error.response) {
-        if (error.response.status === 401) {
-          userMessage = 'Server email configuration issue';
-        } else if (error.response.data?.message) {
-          userMessage = error.response.data.message;
-        } else {
-          userMessage = `Server error (${error.response.status})`;
-        }
-      } else if (error.code === 'ECONNABORTED') {
-        userMessage = 'Request timed out - please try again';
-      } else if (error.message.includes('Network Error')) {
-        userMessage = 'Cannot connect to server';
+      if (error && error.text) {
+        userMessage = error.text;
       }
 
       toast.error(userMessage);
